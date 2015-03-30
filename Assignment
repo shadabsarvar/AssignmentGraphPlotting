@@ -1,0 +1,293 @@
+#=========================== QUESTION 1 ================================
+import numpy as np
+import matplotlib.pyplot as plt
+objective=[1,3]
+constraint1=[10,5,4]
+constraint2=[(1,2),(1,0),(0,1)]
+class LPsolver():
+    def solve(self,a,b,c):
+        if len(a)==2:
+            plt.figure()
+            plt.title('Simplex Method')
+            plt.xlabel('x')
+            plt.ylabel('y')
+            fill_x=[0]
+            fill_y=[0]
+            for i in range(len(b)):
+                if c[i][0]==0:
+                    plt.axhline(y=b[i]/c[i][1], color = 'gbrycm'[i], label='Constraint: '+str(i+1))
+                elif c[i][1]==0:
+                    plt.axvline(x=b[i]/c[i][0], color = 'gbrycm'[i], label='Constraint: '+str(i+1))
+                else:
+                    x = np.array([b[i]/c[i][0], 0])
+                    y = np.array([0, b[i]/c[i][1]])
+                    plt.plot(x, y, 'gbrycm'[i]+'-', label='Constraint: '+str(i+1))
+
+
+        l_b=len(b)
+        l_a=len(a)
+        arr=np.array(c)
+        arr=np.concatenate((arr,np.identity(len(b))),1)
+        b=np.array(b)
+        x=[0]*l_a
+
+        arr=np.insert(arr,len(a)+l_b,b,1)
+        B=np.array([0]*l_b)
+        C=np.array(a+[0]*l_b)
+        ran=range(l_a,l_a+l_b)
+        while(1):
+            maxpos=[]
+            minpos=[]
+            for i in range(l_a+l_b):
+                maxpos.append(C[i]-np.dot(B,arr[:,i]))
+
+
+            c=maxpos.index(max(maxpos))
+
+            if maxpos[c]<=0:
+                break
+            for i in range(l_b):
+                if arr[i,c]!=0:
+                    minpos.append(arr[i,-1]/arr[i,c])
+                else:
+                    minpos.append(100000000000)
+            q=filter(lambda x:x>0,minpos)
+            if q==[]:
+                return "unbounded function"
+                break
+            r=minpos.index(min(q))
+
+            B[r]=C[c]
+            ran[r]=c
+            arr[r,:]=arr[r,:]/arr[r,c]
+            for i in range(l_b):
+                if(i!=r):
+                    arr[i,:]=arr[i,:]-(arr[i,c]/arr[r,c])*arr[r,:]
+            if len(a)==2:
+                if 0 in ran:
+                    m=arr[ran.index(0)][-1]
+                else:
+                    m=0
+                if 1 in ran:
+                    n=arr[ran.index(1)][-1]
+                else:
+                    n=0
+                z=int(a[0]*m + a[1]*n)
+                plt.text(m+0.25, n+0.25, 'Z='+str(z))
+                plt.plot(m, n, 'ko')
+                fill_x.append(m)
+                fill_y.append(n)
+
+        for i in range(len(ran)):
+            if ran[i]<l_a:
+                x[ran[i]]=arr[i,-1]
+        x=list(map(int,x))
+        if len(a)==2:
+            plt.plot(0, 0, 'ko', label='Candidate solution after each iteration')
+            plt.plot(x[0], x[1], 'rD', label='Optimal Solution')
+            plt.fill(fill_x, fill_y, color='aqua')
+            plt.legend(loc='upper right', numpoints=1)
+            plt.show()
+
+        x.append(sum([x[i]*a[i] for i in range(l_a)]))
+        return x
+#=========================== QUESTION 3 ================================
+import matplotlib.pyplot as plt
+import numpy as np
+class PolynomialSolver:
+    def F(self,n,L,val):
+        k=0
+        for i in range(n+1):
+            k+=L[i]*(val**i)
+        return k
+    def Fder(self,n,L,val):
+        k=0
+        for i in range(1,n+1):
+            k+=i*L[i]*(val**(i-1))
+        return k
+    def solve(self,n,L,method):
+        if(method=='bisection'):
+            plt.axis([-15,15,-15,15])
+            plt.plot([float(x) for x in np.arange(-10.0,10.2,0.1)],[self.F(float(x)) for x in np.arange(-10.0,10.2,0.1)],'r-')
+            plt.plot([0,0],[-40,40],'b-',[-40,40],[0,0],'b-')
+            print("Enter lower bound of interval in which root lies")
+            l=int(input())
+            print("Enter upper bound of interval in which root lies")
+            u=int(input())
+            print("Enter maximum number of itertions")
+            it=int(input())
+            while(abs(self.F(n,L,l)-self.F(n,L,u))>0.00001 and it>0):
+                m=(l+u)/2
+                if(self.F(n,L,l)*self.F(n,L,m)<0):
+                    u=m
+                else:
+                    l=m
+                print (l,u,self.F(n,L,l),self.F(n,L,u))
+                it-=1
+                plt.plot([l,l],[self.F(l)-0.5,self.F(l)+0.5],color='red')
+                plt.plot([u,u],[self.F(u)-0.5,self.F(u)+0.5],color='green')
+            return([l,u])
+        if(method=='secant'):
+            print("Enter lower bound of interval in which root lies")
+            l=int(input())
+            print("Enter upper bound of interval in which root lies")
+            u=int(input())
+            print("Enter maximum number of itertions")
+            it=int(input())
+            while(abs(self.F(n,L,l))>0.00001 and it>0):
+                f1=self.F(n,L,l)
+                f2=self.F(n,L,u)
+                l,u=u,u-(((u-l)*f2)/(f2-f1))
+                print (l,u,f1,f2)
+                it-=1
+            return(l)
+        if(method=='secantRF'):
+            print("Enter lower bound of interval in which root lies")
+            l=int(input())
+            print("Enter upper bound of interval in which root lies")
+            u=int(input())
+            m=l
+            print("Enter maximum number of itertions")
+            it=int(input())
+            while(abs(self.F(n,L,m))>0.00001 and it>0):
+                f1=self.F(n,L,l)
+                f2=self.F(n,L,u)
+                m=u-(((u-l)*f2)/(f2-f1))
+                fm=self.F(n,L,m)
+                if(f1*fm<0):
+                    u=m
+                else:
+                    l=m
+                print (m)
+                it-=1
+            return(l)
+        if(method=='newtonraphson'):
+            print("Enter lower bound of interval in which root lies")
+            l=int(input())
+            print("Enter maximum number of itertions")
+            it=int(input())
+            while(abs(self.F(n,L,l))>0.00001 and it>0):
+                l=l-self.F(n,L,l)/self.Fder(n,L,l)
+                it-=1
+            return(l)
+#=========================== QUESTION 4 ================================
+from matplotlib import pyplot as plt
+class Interpolate:
+
+    def solve(self,A,B,method):
+        if(method=="newton"):
+            return (self.Newton(A,B))
+        else:
+            return (self.Lagrange(A,B))
+
+    def plot(self,coeffs,A,B):
+        coeffs.reverse()
+        def f(x):
+            order,sum=len(coeffs)-1,0
+            for i in range(order+1):
+                sum+=(coeffs[i]*(x**(order-i)))
+            return sum
+        n=int((max(A)-min(A)+2)/0.001)
+        x_values=[min(A)-1]
+        for i in range(1,n):
+            x_values.append(float(str(x_values[0]+(0.001*i))[:5]))
+        x_values.append(max(A)+1)
+        y_values=[f(x) for x in x_values]
+        plt.plot(x_values,y_values,A,B,'r o')
+        plt.xlabel("x - axis",fontsize=20)
+        plt.ylabel("y - axis",fontsize=20)
+        plt.show()
+    def Lagrange(self,A,B):
+
+        from numpy import array
+        from numpy.polynomial import polynomial as P
+        n=len(A)
+        w=(-1*A[0],1)
+        for i in range(1,n):
+            w=P.polymul(w,(-1*A[i],1))
+        result=array([0.0 for i in range(len(w)-1)])
+        derivative=P.polyder(w)
+        for i in range(n):
+            result+=(P.polydiv(w,(-1*A[i],1))[0]*B[i])/P.polyval(A[i],derivative)
+        self.plot(list(result),A,B)
+        print("NOTE: coefficients of the terms in the result start from constant term and go up to the highest order term")
+        return(list(result))
+
+    def Newton(self,A,B):
+
+        from numpy import array
+        from numpy.polynomial import polynomial as P
+        n=len(A)
+        mat=[[0.0 for i in range(n)] for j in range(n)]
+        for i in range(n):
+            mat[i][0]=B[i]
+        for i in range(1,n):
+            for j in range(n-i):
+                mat[j][i]=(mat[j+1][i-1]-mat[j][i-1])/(A[j+i]-A[j])
+        res=array((mat[0][0],))
+        for i in range(1,n):
+            prod=(-1*A[0],1)
+
+            for j in range(1,i):
+                prod=P.polymul(prod,(-1*A[j],1))
+            res=P.polyadd(res,array(prod)*mat[0][i])
+        self.plot(list(res),A,B)
+        print("NOTE: coefficients of the terms in the result start from constant term and go up to the highest order term")
+        return (list(res))
+
+apx=Interpolate()
+for method in ["newton","lagrange"]:
+    sol=apx.solve([1,2,3],[1,4,9],method)
+    print(sol)
+#=========================== QUESTION 5 ================================
+import matplotlib.pyplot as plt
+import numpy as np
+class Integrate:
+    def solve(self,order,coeffs,method):
+        def f(x):
+            sum=0
+            for i in range(order+1):
+                sum+=(coeffs[i]*(x**(order-i)))
+            return sum
+        plt.axis([-15,15,-15,15])
+            plt.plot([float(x) for x in np.arange(-10.0,10.2,0.1)],[f(float(x)) for x in np.arange(-10.0,10.2,0.1)],'r-')plt.plot([0,0],[-40,40],'b-',[-40,40],[0,0],'b-')
+
+		if method=='trapezoid':
+			a=float(input('enter the lower limit of interval: '))
+			b=float(input('enter the upper limit of interval: '))
+			n=int((b-a)/0.0005)
+			x_values=[a]
+            for i in range(1,n):
+				x_values.append(float(str(x_values[0]+(0.001*i))[:5]))
+			x_values.append(b)
+			def trapezoid_solution(f,x_values,n):
+				sum=0
+				for i in range(1,n):
+					sum+=f(x_values[i])
+					plt.plot([a+0.0005*(i+1),a+0.0005*(i+1)],[0,f(a+0.0005*(i+1))],color='red')
+				sum*=2
+				sum+=(f(x_values[0])+f(x_values[n]))
+				ans=((x_values[n]-x_values[0])*sum)/(2*n)
+				plt.show()
+				return ans
+			return trapezoid_solution(f,x_values,n)
+		elif method=='simpson':
+			a=float(input('enter the lower limit of interval: '))
+			b=float(input('enter the upper limit of interval: '))
+			n=int((b-a)/0.0005)
+			x_values=[a]
+            for i in range(1,n):
+                x_values.append(float(str(x_values[0]+(0.0005*i)[:5]))
+			x_values.append(b)
+			def simpson_solution(f,x_values,n):
+                sum1,sum2,sum=0,0,0
+				for i in range(1,n,2):
+					sum1+=f(x_values[i])
+				sum1*=4
+				for i in range(2,n,2):
+					sum2+=f(x_values[i])
+				sum2*=2
+				sum+=(f(x_values[0])+f(x_values[n])+sum1+sum2)
+				ans=((x_values[n]-x_values[0])*sum)/(3*n)
+				return ans
+			return simpson_solution(f,x_values,n)
